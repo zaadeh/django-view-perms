@@ -11,7 +11,7 @@ with open('README.rst') as f:
 
 install_requires = [
     'setuptools',
-    'whell',
+    'wheel',
     'Django>=1.11',
 ]
 
@@ -41,7 +41,7 @@ classifiers = [
 ]
 
 setup(name='django-view-perms',
-    version='0.1.1',
+    version='0.1.2',
     description='Django per-view permission checker',
     long_description=long_description,
     keywords=['permission', 'authentication', 'django', 'views'],
