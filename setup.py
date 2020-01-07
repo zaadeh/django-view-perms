@@ -41,7 +41,7 @@ classifiers = [
 ]
 
 setup(name='django-view-perms',
-    version='0.1.2',
+    version='0.1.3',
     description='Django per-view permission checker',
     long_description=long_description,
     keywords=['permission', 'authentication', 'django', 'views'],

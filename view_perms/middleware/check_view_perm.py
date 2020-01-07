@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -10,7 +11,6 @@ from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.urls import resolve
 from django.urls.exceptions import Resolver404
 from django.utils.deprecation import MiddlewareMixin
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class ViewPermissionMiddleware(MiddlewareMixin):
     to be run and check whether the logged in user has been granted the
     per-view permission to access it.
 
-    Should be placed after django.contrib.auth middleware.
+    Should be placed after `django.contrib.auth` middleware.
     """
 
     def process_request(self, request):
@@ -47,7 +47,8 @@ class ViewPermissionMiddleware(MiddlewareMixin):
             view = view.view_func
 
         view_name = '{}.{}'.format(view.__module__, view.__name__)
-        perm_codename = 'access_view_{}'.format(view_name)
+        perm_prefix = getattr(settings, 'VIEW_PERMS_PREFIX', 'access_view_')
+        perm_codename = '{}{}'.format(perm_prefix, view_name)
 
         #Permission = apps.get_model('auth', 'Permission')
         try:

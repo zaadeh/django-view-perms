@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 from importlib import import_module
@@ -10,11 +10,9 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import CommandError
 from django.core.management.base import AppCommand
-from django.urls import RegexURLResolver, RegexURLPattern
-from django.utils import timezone
-from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
-
+from django.urls import RegexURLPattern, RegexURLResolver
+from django.utils import timezone, translation
+from django.utils.translation import ugettext_lazy
 
 logger = logging.getLogger(__name__)
 root_urlconf = import_module(settings.ROOT_URLCONF)  # import root_urlconf module
@@ -91,9 +89,21 @@ class Command(AppCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
         parser.add_argument(
+            '--perm-prefix', action='store', dest='perm_prefix',
+            default='access_view_',
+            help='Specifies the prefix to add before permission code name'
+        )
+        parser.add_argument(
             '--language', action='store', dest='language',
             default=settings.LANGUAGE_CODE,
             help='Specifies the language to translate permission names. Default is settings.LANGUAGE_CODE.'
+        )
+        # TODO: add an option (--update-trans) which reads the updated
+        # translation of names and updates permission names accordingly.
+        parser.add_argument(
+            '--update-trans', action='store_true', dest='update_trans',
+            default=False,
+            help='Read the updated translation for permission name and update accordingly'
         )
         parser.add_argument(
             '--delete-perms', action='store_true', dest='delete_perms',
@@ -101,17 +111,17 @@ class Command(AppCommand):
             help='Remove all view permissions that have been previously created'
         )
         parser.add_argument(
-            '--prune-extra', action='store_true', dest='prune_extra',
+            '--prune-stale', action='store_true', dest='prune_stale',
             default=False,
-            help='Remove extra permissions which do not have a corresponding view and are no longer necessary'
+            help='Remove stale permissions which do not have a corresponding view and are no longer necessary'
         )
 
     def handle_app_config(self, app_config, **options):
         verbosity = options['verbosity']
         language = options['language']
         delete_perms = options['delete_perms']
-        prune_extra = options['prune_extra']
-        perm_prefix = 'access_view_'
+        prune_stale = options['prune_stale']
+        perm_prefix = options['perm_prefix']
 
         if verbosity >= 1:
             self.stdout.write(
@@ -157,7 +167,7 @@ class Command(AppCommand):
             except Exception as e:
                 raise CommandError("{}".format(e))
 
-        if prune_extra:
+        if prune_stale:
             perm_count = 0
 
             try:
@@ -196,6 +206,8 @@ class Command(AppCommand):
                 view_name = get_view_name(view_func)
                 perm_codename = '{}{}'.format(perm_prefix, view_name)
 
+                # TODO: support both an include and exclude list, mutually exclusive.
+                # TODO: support glob patterns in include and exclude lists.
                 if view_name in getattr(settings, 'VIEW_PERMS_IGNORE_LIST', []):
                     if verbosity >= 1:
                         self.stdout.write(
@@ -211,8 +223,8 @@ class Command(AppCommand):
                             pass
                     continue
 
-                # TODO: see if a view is CBV, add permission for each http
-                # method that it supports.
+                # TODO: If a view is CBV, add permission for each http
+                # method that it supports, if asked by the user.
 
                 view_name_trans = view_name  # translated view name
                 if hasattr(view_func, 'view_class'):
@@ -221,7 +233,8 @@ class Command(AppCommand):
                 elif hasattr(view_func, '__name_trans__'):
                     view_name_trans = view_func.__name_trans__
 
-                perm_name = _("Can access view %(view_name)s") % {'view_name': view_name_trans}
+                perm_name = ugettext_lazy("Can access view %(view_name)s"
+                    ) % {'view_name': view_name_trans}
 
                 try:
                     perm = Permission.objects.get(content_type=content_type,
