@@ -30,10 +30,11 @@ default). So it's possible to have apps that none of their views are
 permission enforced.
 
 Names of permissions that this app created (ones which are displayed
-in Django admin interface) are composed of a fixed prefix (``view_perm_``)
-and the fully qualified view name (module name + ``.`` + view function or
-class name). If these names are too cryptic for users of the admin
-interface or you want them to be in a local language, it has been made
+in Django admin interface) are composed of a configurable prefix
+(by default ``access_view_``) and the fully qualified view name
+(module name + ``.`` + view function or class name).
+If these names are too cryptic for users of the admin interface
+or you want them to be in a local language, it has been made
 possible for the programmer to provide a translation for this string by
 assigning the proper ``gettext`` translation to the ``__name_trans__``
 attribute of the view function or class.
