@@ -51,7 +51,9 @@ def get_view_name(view_func):
 
     if hasattr(view_func, 'view_class'):
         # A class-based view
-        view_path = '.'.join([view_func.view_class.__module__, view_func.view_class.__name__])
+        view_path = '.'.join(
+            [view_func.view_class.__module__, view_func.view_class.__name__]
+        )
     else:
         # A function-based view
         view_path = '.'.join([view_func.__module__, view_func.__name__])
@@ -74,46 +76,65 @@ class Command(AppCommand):
         self.start_time = timezone.localtime()
         logger.info("started at {}".format(self.start_time))
         if options['verbosity'] > 1:
-            self.stdout.write(self.style.WARNING("started at {}".format(
-                self.start_time)))
+            self.stdout.write(
+                self.style.WARNING("started at {}".format(self.start_time))
+            )
 
         retval = super(Command, self).execute(*args, **options)
 
-        logger.info("finished at {}, took {}".format(timezone.localtime(),
-            timezone.localtime() - self.start_time))
+        logger.info(
+            "finished at {}, took {}".format(
+                timezone.localtime(), timezone.localtime() - self.start_time
+            )
+        )
         if options['verbosity'] > 1:
-            self.stdout.write(self.style.WARNING("finished at {}, took {}".format(
-                timezone.localtime(), timezone.localtime() - self.start_time)))
+            self.stdout.write(
+                self.style.WARNING(
+                    "finished at {}, took {}".format(
+                        timezone.localtime(), timezone.localtime() - self.start_time
+                    )
+                )
+            )
         return retval
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
         parser.add_argument(
-            '--perm-prefix', action='store', dest='perm_prefix',
+            '--perm-prefix',
+            action='store',
+            dest='perm_prefix',
             default='access_view_',
-            help='Specifies the prefix to add before permission code name'
+            help='Specifies the prefix to add before permission code name',
         )
         parser.add_argument(
-            '--language', action='store', dest='language',
+            '--language',
+            action='store',
+            dest='language',
             default=settings.LANGUAGE_CODE,
-            help='Specifies the language to translate permission names. Default is settings.LANGUAGE_CODE.'
+            help='Specifies the language to translate permission names. Default is settings.LANGUAGE_CODE.',
         )
         # TODO: add an option (--update-trans) which reads the updated
         # translation of names and updates permission names accordingly.
         parser.add_argument(
-            '--update-trans', action='store_true', dest='update_trans',
+            '--update-trans',
+            action='store_true',
+            dest='update_trans',
             default=False,
-            help='Read the updated translation for permission name and update accordingly'
+            help='Read the updated translation for permission name and update accordingly',
         )
         parser.add_argument(
-            '--delete-perms', action='store_true', dest='delete_perms',
+            '--delete-perms',
+            action='store_true',
+            dest='delete_perms',
             default=False,
-            help='Remove all view permissions that have been previously created'
+            help='Remove all view permissions that have been previously created',
         )
         parser.add_argument(
-            '--prune-stale', action='store_true', dest='prune_stale',
+            '--prune-stale',
+            action='store_true',
+            dest='prune_stale',
             default=False,
-            help='Remove stale permissions which do not have a corresponding view and are no longer necessary'
+            help='Remove stale permissions which do not have a corresponding view and are no longer necessary',
         )
 
     def handle_app_config(self, app_config, **options):
@@ -124,12 +145,10 @@ class Command(AppCommand):
         perm_prefix = options['perm_prefix']
 
         if verbosity >= 1:
-            self.stdout.write(
-                "Trying to set the language to '{}'".format(language))
+            self.stdout.write("Trying to set the language to '{}'".format(language))
         translation.activate(language)
         if verbosity >= 1:
-            self.stdout.write(
-                "Language set to '{}'".format(translation.get_language()))
+            self.stdout.write("Language set to '{}'".format(translation.get_language()))
 
         all_views = get_all_views(all_urlpatterns)
         # app_views = [view for view in all_views if view.__module__.startswith(app_config.name)]
@@ -144,7 +163,9 @@ class Command(AppCommand):
         if verbosity >= 0:
             self.stdout.write(
                 "Total of {} views found, {} of which belong in app '{}'".format(
-                    len(all_views), len(app_views), app_config.name))
+                    len(all_views), len(app_views), app_config.name
+                )
+            )
 
         # each django permission needs to be related to a model (content_type)
         # we decided to assign django user model to the view permissions
@@ -155,14 +176,15 @@ class Command(AppCommand):
 
         if delete_perms:
             try:
-                perms = Permission.objects.filter(content_type=content_type,
-                    codename__startswith='{}{}.'.format(perm_prefix, app_config.name))
+                perms = Permission.objects.filter(
+                    content_type=content_type,
+                    codename__startswith='{}{}.'.format(perm_prefix, app_config.name),
+                )
                 perm_count = len(perms)
                 perms.delete()
 
                 if verbosity >= 0:
-                    self.stdout.write(
-                        "{} permissions deleted".format(perm_count))
+                    self.stdout.write("{} permissions deleted".format(perm_count))
                 return
             except Exception as e:
                 raise CommandError("{}".format(e))
@@ -171,8 +193,10 @@ class Command(AppCommand):
             perm_count = 0
 
             try:
-                perms = Permission.objects.filter(content_type=content_type,
-                    codename__startswith='{}{}.'.format(perm_prefix, app_config.name))
+                perms = Permission.objects.filter(
+                    content_type=content_type,
+                    codename__startswith='{}{}.'.format(perm_prefix, app_config.name),
+                )
                 app_view_names = [
                     '{}{}'.format(perm_prefix, get_view_name(view_func))
                     for view_func in app_views
@@ -181,20 +205,23 @@ class Command(AppCommand):
                 if verbosity >= 2:
                     self.stdout.write(
                         "Currently {} view access permissions for app '{}' exist".format(
-                            len(perms), app_config.name))
+                            len(perms), app_config.name
+                        )
+                    )
 
                 for perm in perms:
                     if perm.codename not in app_view_names:
                         if verbosity >= 1:
                             self.stdout.write(
                                 "View access permission is no longer necessary. '{}'".format(
-                                    perm.codename))
+                                    perm.codename
+                                )
+                            )
                         perm.delete()
                         perm_count += 1
 
                 if verbosity >= 0:
-                    self.stdout.write(
-                        "{} permissions deleted".format(perm_count))
+                    self.stdout.write("{} permissions deleted".format(perm_count))
                 return
             except Exception as e:
                 raise CommandError("{}".format(e))
@@ -211,14 +238,16 @@ class Command(AppCommand):
                 if view_name in getattr(settings, 'VIEW_PERMS_IGNORE_LIST', []):
                     if verbosity >= 1:
                         self.stdout.write(
-                            "View access permission ignored for '{}'".format(
-                                view_name))
+                            "View access permission ignored for '{}'".format(view_name)
+                        )
                         # Delete if it's in ignore list
                         try:
                             Permission.objects.get(codename=perm_codename).delete()
                             self.stdout.write(
                                 "Deleted view access permission for '{}', since it was in the ignore list".format(
-                                    view_name))
+                                    view_name
+                                )
+                            )
                         except Permission.DoesNotExist:
                             pass
                     continue
@@ -233,36 +262,44 @@ class Command(AppCommand):
                 elif hasattr(view_func, '__name_trans__'):
                     view_name_trans = view_func.__name_trans__
 
-                perm_name = ugettext_lazy("Can access view %(view_name)s"
-                    ) % {'view_name': view_name_trans}
+                perm_name = ugettext_lazy("Can access view %(view_name)s") % {
+                    'view_name': view_name_trans
+                }
 
                 try:
-                    perm = Permission.objects.get(content_type=content_type,
-                        codename=perm_codename)
+                    perm = Permission.objects.get(
+                        content_type=content_type, codename=perm_codename
+                    )
                     if perm:
                         if verbosity >= 1:
                             self.stdout.write(
                                 "View access permission already exists for '{}'".format(
-                                    view_name))
+                                    view_name
+                                )
+                            )
 
                         # Update perm name if it exists
                         perm.name = perm_name
                         perm.save()
-                        self.stdout.write("Updated access permission name for '{}'.".format(
-                            view_name))
+                        self.stdout.write(
+                            "Updated access permission name for '{}'.".format(view_name)
+                        )
                 except Permission.MultipleObjectsReturned:
                     raise CommandError("This should not happen")
                 except Permission.DoesNotExist:
-                    Permission.objects.create(content_type=content_type,
-                        codename=perm_codename, name=perm_name)
+                    Permission.objects.create(
+                        content_type=content_type,
+                        codename=perm_codename,
+                        name=perm_name,
+                    )
                     if verbosity >= 1:
-                        self.stdout.write("View access permission created for '{}'".format(
-                            view_name))
+                        self.stdout.write(
+                            "View access permission created for '{}'".format(view_name)
+                        )
                     perm_count += 1
 
             if verbosity >= 0:
-                self.stdout.write(
-                    "{} permissions created".format(perm_count))
+                self.stdout.write("{} permissions created".format(perm_count))
             return
         except (ValueError, IOError) as e:
             raise CommandError('\n'.join(e.messages))

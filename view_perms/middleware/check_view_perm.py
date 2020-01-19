@@ -26,20 +26,27 @@ class ViewPermissionMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         if not hasattr(request, 'user'):
-            raise ImproperlyConfigured("'{}' needs to be placed after django auth middleware".format(
-                self.__class__.__name__))
+            raise ImproperlyConfigured(
+                "'{}' needs to be placed after django auth middleware".format(
+                    self.__class__.__name__
+                )
+            )
 
         try:
             content_type = ContentType.objects.get_for_model(get_user_model())
         except (ContentType.DoesNotExist, ContentType.MultipleObjectsReturned) as e:
-            raise ImproperlyConfigured("Failed to find user content type: '{}'".format(e))
+            raise ImproperlyConfigured(
+                "Failed to find user content type: '{}'".format(e)
+            )
 
         try:
             view = resolve(request.get_full_path())[0]
         except Resolver404:
             logger.warning(
                 "path '{}' could not be resolved. not enforcing view permission".format(
-                request.get_full_path()))
+                    request.get_full_path()
+                )
+            )
             return
 
         if hasattr(view, 'view_func'):
@@ -50,22 +57,30 @@ class ViewPermissionMiddleware(MiddlewareMixin):
         perm_prefix = getattr(settings, 'VIEW_PERMS_PREFIX', 'access_view_')
         perm_codename = '{}{}'.format(perm_prefix, view_name)
 
-        #Permission = apps.get_model('auth', 'Permission')
+        # Permission = apps.get_model('auth', 'Permission')
         try:
-            perm = Permission.objects.get(content_type=content_type,
-                codename=perm_codename)
+            perm = Permission.objects.get(
+                content_type=content_type, codename=perm_codename
+            )
         except Permission.MultipleObjectsReturned:
-            logger.error("This should not happen: '{}', '{}'".format(
-                content_type, perm_codename))
+            logger.error(
+                "This should not happen: '{}', '{}'".format(content_type, perm_codename)
+            )
         except Permission.DoesNotExist:
             ## TODO: also check if perm has been put in ignore list
             logger.debug(
                 "permission named '{}' does not exist. not enforcing view permission".format(
-                perm_codename))
+                    perm_codename
+                )
+            )
             return
 
-        if not request.user.is_authenticated or not request.user.has_perm('auth.{}'.format(perm_codename)):
+        if not request.user.is_authenticated or not request.user.has_perm(
+            'auth.{}'.format(perm_codename)
+        ):
             logger.debug(
                 "user '{}' tried to access view '{}' without being granted access to".format(
-                request.user, view_name))
+                    request.user, view_name
+                )
+            )
             raise PermissionDenied()

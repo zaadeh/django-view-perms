@@ -40,7 +40,8 @@ classifiers = [
     'Framework :: Django',
 ]
 
-setup(name='django-view-perms',
+setup(
+    name='django-view-perms',
     version='0.1.3',
     description='Django per-view permission checker',
     long_description=long_description,
@@ -59,5 +60,5 @@ setup(name='django-view-perms',
     scripts=[],
     test_suite='nose.collector',
     tests_require=['nose', 'nose-cover3'],
-    zip_safe=False
+    zip_safe=False,
 )
