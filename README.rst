@@ -7,6 +7,10 @@ view) and also enforce the created permissions for the logged-in
 user. Users will only be able to process the views that they have
 been explicitly given the related permission to.
 
+Install by running:
+
+    pip install django-view-perms
+
 After adding ``view_perms`` to the ``INSTALLED_APPS`` list, use the
 ``create_view_perms`` Django management command to create all target
 permissions automatically. Permissions need to be created before
@@ -38,4 +42,3 @@ or you want them to be in a local language, it has been made
 possible for the programmer to provide a translation for this string by
 assigning the proper ``gettext`` translation to the ``__name_trans__``
 attribute of the view function or class.
-
